@@ -1,0 +1,73 @@
+include sidebar/bigdrop
+
+div.oc-sidebar-header
+    ul.nav.nav-justified-all
+        li
+            a#oc-left-toggle.btv-nav(href="#oc-wrapper", style="width: 50px;", data-toggle="offcanvas", data-control="left",
+            data-states="open,partial", data-persist="lg,md,sm", data-parent="body", data-sibling="right")
+                i.icm.icm-menu6.oc-partial-rotate
+        li
+            a.btn-nav(href="#jump-to-menu", data-toggle="modal")
+                i.icm.icm-arrow-right6
+        li
+            a.btn-nav(href="#", rel="popovel-click", data-toggle="popover", data-container="body", data-placement="bottom")
+                i.icm.icm-bubbles5.has-corner-badge.animated.tada
+                    span.badge.badge-corner.badge-corner-top-right.badge-info-dk
+                        i.fa.fa-exclamation
+        li
+            a(href="#")
+                i.icm.icm-envelope3.has-corner-badge
+                    span.badge.badge-corner.badge-corner-top-right.badge-primary-dk 4
+
+div.oc-sidebar-content#collapseAvatarLeft
+    ul.nav.nav-stacked.oc-sidebar-nav.visible-xs
+        li
+            form.oc-header.oc-search(role="search")
+                div.form-group.has-header
+                    span.icm.icm-search3.form-control-header
+                    input.form-control(type="text", placeholder="Busca")
+                    
+        li.dropdown
+            a.collapsed(href="#dropdownUserSidebar", data-toggle="collapse", data-parent="#collapseAvatarLeft")
+                div.media
+                    img.img-circle.media-object.pull-left(src="http://lorempixel.com/48/48/")
+                    div.media-body
+                        h4.media-heading Amy R. Hofstadter
+                        lorem()
+                            
+            ul.collapse.dropdown-menu#dropdownUserSidebar
+                li
+                    a(href="#")
+                        i.icm.icm-user
+                        | Profile
+                li
+                    a(href="#")
+                        i.icm.icm-cog
+                        | Settings
+                li
+                    a(href="#")
+                        i.icm.icm-switch text-danger
+                        span.text-danger Sign out
+
+
+    include sidebar/nav
+    
+    div.oc-partial-hidden
+        div.padded
+            button.btn.btn-black-dk.btn-block(rel="popover", id="reset-localstorage",
+            data-toggle="popover", data-placement="top", data-content="Resets widgets states to original")
+                span.text-dark-lt Reset local storate
+            
+        div.padded
+            div.row
+                div.col-xs-6
+                    div.easy-pie-chart.easy-pie-chart-normal(data-percent="40", data-color="black-dk", data-size="80",
+                    data-line-width="8", data-scale-color="false", data-track-color="rgba(255,255,255,0.05)")
+                        span 40%
+                    p.text-center Income
+                    
+                div.col-xs-6
+                    div.easy-pie-chart.easy-pie-chart-normal(data-percent="25", data-color="black-dk", data-size="80",
+                    data-line-width="8", data-scale-color="false", data-track-color="rgba(255,255,255,0.05)")
+                        span 25%
+                    p.text-center Sales

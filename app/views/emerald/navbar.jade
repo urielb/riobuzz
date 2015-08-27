@@ -1,0 +1,45 @@
+nav.navbar.navbar-default.navbar-static-top.navbar-inplace(role="navigation")
+  ul.nav.navbar-nav.navbar-left.pull-left.hidden-sm.hidden-md.hidden-lg
+    li
+      a#oc-left-toggle-xs.btn-nav.pull-left(href="#oc-wrapper", data-toggle="offcanvas", data-control="left",
+      data-states="open,hidden", data-persist="lg,md,sm", data-parent="body", data-sibling="right")
+      i.icm.icm-menu6
+
+  a.navbar-brand(href="#")
+    img(src="/images/emerald_flat.png")
+    span.text-gradient-success-dk Emerald
+    
+  ul.nav.navbar-nav.navbar-right.pullright
+    li#oc-right-toggle-container
+      a#oc-right-toggle.btn-nav.sidebar-toggle-right(href="#oc-wrapper", rel="tooltip", title="Toggle chat", data-placement="bottom",
+      data-container="#oc-right-toggle-container", data-toggle="offcanvas", data-control="right", data-states="open,hidden",
+      data-persist="lg,md,sm")
+        i.fa.fa-lg.fa-comments.has-corner-badge
+          span.badge.badge-corner.badge-corner-top-right.badge-info 3
+          
+  ul.nav.navbar-nav.navbar-right.pull-right.hidden-xs
+    li.dropdown
+      a.navbar-img-link(href="#", data-toggle="dropdown")
+        img.img-circle(src="http://lorempixel.com/48/48/")
+        span.hidden-xs.hidden-sm.hidden-md  Amy R. Hofstadter
+        b.caret
+      ul.dropdown-menu.animated.fadeIn.fast
+        li
+          a(href="#")
+            i.fa.fa-user
+            |  Profile
+        li
+          a(href="#")
+            i.fa.fa-cog
+            |  Settings
+        li
+          a(href="/signout")
+            i.fa.fa-power-off.text-danger
+            span.text-danger  Sign out
+
+  ul.nav.navbar-nav.nav-center.hidden-xs
+    li
+      form.navbar-form.inplace.navbar-form-search.navbar-right(role="searcg")
+        div.form-group.has-header.selectize-search.no-margin-bottom
+          span.fa.fa-search.form-control-header
+          input.form-control.selectize-search-movie(type="text", placeholder="Busca")

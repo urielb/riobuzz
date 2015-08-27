@@ -1,0 +1,30 @@
+mixin menu_node(item, parent_id)
+    - var level_id = uuid()
+    - var href = item['href']
+    - var href = (item['children']?"#"+level_id:href)
+    - var href = (href?href:"#")
+    - var collapse = { 'data-toggle': "collapse", 'data-parent': "#"+parent_id }
+    - var highlight = item['highlight'] || href
+    - var highlighted = sidebar.highlighted([highlight])
+    - var attrs = highlighted ? {} : { 'class': "collapsed" }
+    if item['children']
+        - _.extend(attrs, collapse)
+    if item['attrs']
+        - _.extend(attrs, item['attrs'])    
+    - var classes = ''
+    - classes += item['children'] ? ' dropdown' : ''
+    - classes += highlighted ? ' active' : ''
+    
+    li(class=classes)
+        a(href=href)&attributes(attrs)
+            span.oc-partial-menu-item= item['text']
+                if item['children']
+                    b.caret
+                        
+        if item['caption']
+            |#{item['caption']}
+            
+        if item['children']
+            ul.collapse.dropdown-menu(class=highlighted?'in':'', id=level_id)
+                each child, i in item['children']
+                    +menu_node(child, level_id)

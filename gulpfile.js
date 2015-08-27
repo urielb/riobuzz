@@ -10,13 +10,13 @@ var gutil = require('gulp-util');
 var nodemon = require('gulp-nodemon');
 
 // define the default task and add watcher to it
-gulp.task('default', ['watch', 'browser-sync', 'serve']);
+gulp.task('default', ['build-js', 'build-css', 'watch', 'browser-sync']);
 
 // configure the jshint task
 gulp.task('jshint', function () {
   return gulp.src('app/**/*.js')
       .pipe(jshint())
-      .pipe(jshint.reported('jshint-stylish'));
+      .pipe(jshint.reporter('jshint-stylish'));
 });
 
 // build js
@@ -94,8 +94,7 @@ gulp.task('nodemon', function (cb) {
 
 // configure which files to watch and what tasks to execute on file change
 gulp.task('watch', function() {
-  livereload.listen();
   gulp.watch('app/**/*.js', ['jshint']);
   gulp.watch('app/media/javascript/**/*.js', ['build-js']);
-  gulp.watch('app/media/stylesheet/**/*.js', ['build-css']);
+  gulp.watch('app/media/stylesheet/**/*.css', ['build-css']);
 });

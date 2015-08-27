@@ -1,5 +1,9 @@
 extends layout
-
 block content
-  h1= title
-  p Welcome to #{title}
+    div.container
+        div.row
+            div.col-sm-6.col-md-4.col-md-offset-4
+                h1 Hello World! Welcome #{user.username}
+                script(type='text/javascript').
+                  var user = #{user};
+                - console.log(user)

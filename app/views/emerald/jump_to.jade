@@ -1,0 +1,27 @@
+- var getHref = function (item) {
+-     var href = item['href']
+-     if (typeof href !== 'string' && typeof item['children'] !== 'undefined')
+-         if (typeof item['children'] === 'object') {
+-             var href = getHref(item['children'][Object.keys(item['children'])[0]])
+-         }
+-     if (typeof href !== 'string')
+-         var href = "#"
+-     return href
+- }
+
+mixin modal_menu(item)
+    div.col-sm-4
+        - var href = getHref(item)
+        a(href=href)
+            div.jump-to-element.padded.text-gradient-white.text-component-shadow
+                i(class=item.icon, class=['icm-4x'])
+                h5= item.text
+    
+div#jump-to-menu.modal.blur.jump-to-modal
+    div.modal-dialog.modal-lg
+        div.clearfix
+            button.close.pull-right.text-white-dk(type="button", data-dismiss="modal", aria-hidden="true")!= "&times;"
+            
+        div.container-fluid
+            each val, index in sidebar_menu
+                +modal_menu(val)

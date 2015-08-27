@@ -1,0 +1,24 @@
+- var links = sidebar.active_level_links()
+div.container-fluid
+    div.row
+        div.col-sm-6
+            h3.em-page-header.v-mid-row.thin
+                if links[0]
+                    i(class=links[0]['icon'], class=['text-gradient-info-dk'])
+                    - var last = links[links.length - 1]
+                    span.text-gradient-info-dk= last['text']
+                        if last['tip']
+                            small= last['tip']
+                        
+        div.col-sm-6.text-right-sm.text-right-md.text-right-lg
+            ul.breadcrumb.breadcrumb-top
+                li:i
+                    i.fa.fa-home
+                    |Home
+                    
+                each link, i in links
+                    li(class=(links.length - 1 == i)?'active':'')
+                        if link['href'] && i != links.length - 1
+                            a(href=link['href'])= link['text']
+                        else
+                            #{link['text']}
