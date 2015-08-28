@@ -8,13 +8,7 @@ each val in [144, 114, 72, 57]
 title= title
 
 script(type='text/javascript').
-    var polyfilter_scriptpath = "./javascripts/polyfills/filters/";
+    var polyfilter_scriptpath = "/js/polyfills/filters/";
     window.polyfilter_skip_stylesheets = true;
     
-link(rel='stylesheet', href='/stylesheets/application.css')
-link(rel='stylesheet', href='/stylesheets/splash.css')
-link(rel='stylesheet', href='/stylesheets/style.css')
-
-if skip_assets !== true
-    script(type='text/javascript', src='/javascripts/application.js')
-    script(type='text/javascript', src='/javascripts/init.js')
+link(rel='stylesheet', href='/css/bundle.css')

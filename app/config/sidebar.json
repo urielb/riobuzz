@@ -1,0 +1,13 @@
+{
+  "dashboard": {
+    "text": "Dashboard",
+    "icon": "icm icm-screen4",
+    "href": "/",
+    "attrs": {
+      "rel": "popover-sidebar",
+      "data-container": "body",
+      "data-placement": "right",
+      "data-content": "A mashup of components, mainly visual indicators."
+    }
+  }
+}

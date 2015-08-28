@@ -24,6 +24,8 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '../public')));
 
+var sidebar = require('./libs/sidebar-helper')(app);
+
 app.use('/', routes);
 app.use('/users', users);
 
