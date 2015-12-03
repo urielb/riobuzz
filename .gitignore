@@ -1,4 +1,4 @@
-node_modules
-public/js
-public/css
 .idea
+.c9
+node_modules
+site/node_modules
