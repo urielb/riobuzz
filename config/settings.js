@@ -4,5 +4,6 @@
 
 module.exports = {
   MAX_STOP_DISTANCE: 100,
-  WALKSPEED: 50 // Km per minute
+  WALKSPEED: 50, // Km per minute
+  DISTANCE_CLOSE_STOPS: 500
 };

@@ -15,14 +15,43 @@ router.get('/', function(req, res){
 });
 
 /**
+ * Get all lines information
+ */
+router.get('/lines/', function (req, res, next) {
+  res.json({lines: global.lines});
+});
+
+/**
+ * Get line information
+ */
+router.get('/lines/:line', function (req, res, next) {
+  var line = global.lines[req.params['line']];
+
+  res.json({line: line});
+});
+
+/**
+ * Get all lines information
+ */
+router.get('/stops/', function (req, res, next) {
+  res.json({stops: global.stops});
+});
+
+/**
+ * Get stop information
+ */
+router.get('/stop/:stop', function (req, res, next) {
+  var stop = global.lines[req.params['stop']];
+
+  res.json({stop: stop});
+});
+
+/**
  * Load and process stops from CSV
  */
 router.get('/processStops/', function (req, res, next) {
-  dataProcessor.processStops(function (error, lines, stops) {
-    if (error) {
-      var err = new Error();
-      err.status = 500;
-      err.message = error.toString();
+  dataProcessor.processStops(function (err, lines, stops) {
+    if (err) {
       next(err);
     } else {
       var jsonResponse = {
