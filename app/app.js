@@ -41,10 +41,12 @@ app.use(function(err, req, res, next) {
   res.json({
     status: err.status || 500,
     message: err.message,
-    stack: err.stack
+    stack: (err.status == 404) ? undefined : err.stack
   });
 
-  next(err);
+  if (err.status == 500) {
+    next(err);
+  }
 });
 
 module.exports = app;

@@ -40,7 +40,7 @@ router.get('/stops/', function (req, res, next) {
 /**
  * Get stop information
  */
-router.get('/stop/:stop', function (req, res, next) {
+router.get('/stops/:stop', function (req, res, next) {
   var stop = global.lines[req.params['stop']];
 
   res.json({stop: stop});

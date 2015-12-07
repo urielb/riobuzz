@@ -11,9 +11,9 @@ gulp.task('default', ['browser-sync'], function () {
 gulp.task('browser-sync', ['nodemon'], function() {
 	browserSync.init(null, {
 		proxy: "http://localhost:3000",
-        files: ["public/**/*.*", "app/views/**/*.jade"],
-        open: false,
-        port: 7000
+      files: ["public/**/*.*", "app/views/**/*.jade"],
+      open: false,
+      port: 7000
 	});
 });
 gulp.task('nodemon', function (cb) {
@@ -21,7 +21,8 @@ gulp.task('nodemon', function (cb) {
 	var started = false;
 	
 	return nodemon({
-		script: './bin/www'
+		script: './bin/www',
+		ignore: ['./app/controllers/**/*.*']
 	}).on('start', function () {
 		// to avoid nodemon being started multiple times
 		// thanks @matthisk

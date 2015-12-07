@@ -182,6 +182,10 @@ methods.processNearStops = function (callback) {
   callback();
 };
 
-// methods. rework sequency
+methods.redoSequency = function (callback) {
+  console.log("Redoing lines stops sequency");
+
+  callback();
+};
 
 module.exports = methods;
