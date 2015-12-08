@@ -63,4 +63,33 @@ router.get('/processStops/', function (req, res, next) {
   });
 });
 
+/**
+ * Process stops near stops
+ */
+router.get('/processNearStops/', function (req, res, next) {
+  dataProcessor.processNearStops(function (err) {
+    if (err) {
+      next(err);
+    } else {
+      var jsonResponse = {
+        stops: global.stops
+      };
+      res.json(jsonResponse);
+    }
+  });
+});
+
+/**
+ * Process stops near stops
+ */
+router.get('/processLineStopsSequency/', function (req, res, next) {
+  var lines = req.query['lines'] || "";
+
+  dataProcessor.processLineStopsSequency(lines, function (processedLines, stops) {
+    console.log("done processing");
+    console.log(processedLines);
+    res.json(stops);
+  });
+});
+
 module.exports = router;

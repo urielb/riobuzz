@@ -101,7 +101,7 @@ methods.processStops = function (callback) {
         stop.longitude = parseFloat(stop.longitude);
 
         // Set up lines
-        if (lines[stop.linha] !== undefined) {
+        if (lines[stop.linha] != undefined) {
           lines[stop.linha].stops.push({
             geo: [stop.latitude, stop.longitude],
             order: stop.sequencia,
@@ -112,7 +112,11 @@ methods.processStops = function (callback) {
             line: stop.linha,
             description: stop.descricao,
             agency: stop.agencia,
-            stops: []
+            stops: [{
+              geo: [stop.latitude, stop.longitude],
+              order: stop.sequencia,
+              trip: -1
+            }]
           };
         }
 
@@ -182,10 +186,97 @@ methods.processNearStops = function (callback) {
   callback();
 };
 
-methods.redoSequency = function (callback) {
+methods.processLineStopsSequency = function (lines, callback) {
   console.log("Redoing lines stops sequency");
 
-  callback();
+  if (lines instanceof Function) {
+    callback = lines;
+    lines = Object.keys(global.lines);
+  } else if (lines instanceof Array) {
+    lines = lines;
+  } else if (lines instanceof Object) {
+    lines = Object.keys(lines);
+  } else if (typeof lines === "string") {
+    var pattern = "[^\\d,]",
+        re = new RegExp(pattern, "g");
+    lines = lines.replace(re, "");
+    lines = lines.split(",");
+    while(lines.indexOf("") >= 0) lines.splice(lines.indexOf(""), 1);
+  } else {
+    lines = Object.keys(global.lines);
+  }
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = global.lines[lines[i]];
+    var stops = {};
+
+    for (var j = 0; j < line.stops.length; j++) {
+      var stop = line.stops[j];
+
+      if (stops[stop.order])
+        stops[stop.order].push({geo: stop.geo, trip: stop.trip});
+      else
+        stops[stop.order] = [{geo: stop.geo, trip: stop.trip}];
+    }
+
+    var stopsOrder = Object.keys(stops).sort(function (a, b) {
+      return parseInt(a, 10) - parseInt(b, 10);
+    });
+
+    var trips = [];
+    for (var j = 0; j < stops[stopsOrder[0]].length; j++) {
+      stops[stopsOrder[0]][j].trip = j;
+      trips[j] = {};
+      trips[j][stopsOrder[0]] = {
+        geo: stops[stopsOrder[0]][j].geo,
+        trip: stops[stopsOrder[0]][j].trip
+      }; // Start a new trip with one of the initil points
+    }
+
+    stopsOrder.splice(0,1);
+
+    for (var j = 0; j < stopsOrder.length; j++) {
+      var currentStopNumber = parseInt(stopsOrder[j], 10);
+
+      var usedStops = [];
+      for (var k = 0; k < trips.length; k++) {
+        var currentTrip = trips[k];
+        var tripStops = Object.keys(currentTrip);
+        var lastStopNumber = parseInt(tripStops[tripStops.length - 1], 10);
+        var lastStop = currentTrip[lastStopNumber];
+
+        if (lastStopNumber == currentStopNumber - 1) {
+          var stopsDistance = Infinity;
+          var stopTrip = -1;
+
+          for (var u = 0; u < stops[stopsOrder[j]].length; u++) {
+            if (usedStops.indexOf(u) == -1) {
+              var currentStop = stops[stopsOrder[j]][u];
+              var distance = geo.calculateDistance(lastStop.geo, currentStop.geo, 'm');
+              if (distance < stopsDistance) {
+                stopsDistance = distance;
+                stopTrip = u;
+              }
+            }
+          }
+
+          usedStops.push(u);
+
+          stops[stopsOrder[j]][stopTrip].trip = k;
+          currentTrip[currentStopNumber] = {
+            geo: stops[stopsOrder[j]][stopTrip].geo,
+            trip: stops[stopsOrder[j]][stopTrip].trip
+          };
+
+          // stops[stopsOrder[j]].splice(stopTrip, 1);
+        }
+      }
+    }
+
+    console.log(stops);
+  }
+
+  callback(lines, stops);
 };
 
 module.exports = methods;

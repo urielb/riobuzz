@@ -21,8 +21,8 @@ gulp.task('nodemon', function (cb) {
 	var started = false;
 	
 	return nodemon({
-		script: './bin/www',
-		ignore: ['./app/controllers/**/*.*']
+		script: './bin/www'
+		// ignore: ["app/controllers/*", "*dataProcessor.js"]
 	}).on('start', function () {
 		// to avoid nodemon being started multiple times
 		// thanks @matthisk
