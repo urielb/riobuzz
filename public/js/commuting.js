@@ -50,30 +50,71 @@ $(function () {
     var result = $("#result");
     result.html("");
 
-    $.get("/getCommutingPoints/?initial=" + initial + "&arrival=" + arrival, function (data) {
-      //console.log(data);
-      var combinations = [];
+    // $.get("/getCommutingPoints/?initial=" + initial + "&arrival=" + arrival, function (data) {
+    $.get("/stops/line/512/0", function (data) {
+      var stopsCoords = [];
       for (var i = 0; i < data.length; i++) {
-        var combination = data[i];
-        var cmbName = "";
-        if (combination.startingLine == combination.finishingLine)
-          cmbName = combination.startingLine;
-        else
-          var cmbName = combination.startingLine + " -> " + combination.finishingLine;
-        if (combinations.indexOf(cmbName) < 0)
-          combinations.push(cmbName);
+        var stop = data[i];
+        stopsCoords.push({
+          lat: stop.geo[0],
+          lng: stop.geo[1]
+        });
       }
 
-      if (combinations.length > 0) {
-        result.append("<br/>").append(combinations.join("<br/>"));
-        result.append("<br/><br/>");
-      } else {
-        result.append("<br/>Nenhuma opção disponível encontrada nesse caminho<br/><br/>");
-      }
+      var stopsPath = new google.maps.Polyline({
+        path: stopsCoords,
+        geodesic: true,
+        strokeColor: '#FF0000',
+        strokeOpacity: 1.0,
+        strokeWeight: 2
+      });
 
-      result.dialog();
-      //result.append(JSON.stringify(data, null, 2));
+      stopsPath.setMap(map);
     });
+
+    $.get("/stops/line/512/1", function (data) {
+      var stopsCoords = [];
+      for (var i = 0; i < data.length; i++) {
+        var stop = data[i];
+        stopsCoords.push({
+          lat: stop.geo[0],
+          lng: stop.geo[1]
+        });
+      }
+
+      var stopsPath = new google.maps.Polyline({
+        path: stopsCoords,
+        geodesic: true,
+        strokeColor: '#000088',
+        strokeOpacity: 1.0,
+        strokeWeight: 2
+      });
+
+      stopsPath.setMap(map);
+    });
+
+    //  var combinations = [];
+    //  for (var i = 0; i < data.length; i++) {
+    //    var combination = data[i];
+    //    var cmbName = "";
+    //    if (combination.startingLine == combination.finishingLine)
+    //      cmbName = combination.startingLine;
+    //    else
+    //      var cmbName = combination.startingLine + " -> " + combination.finishingLine;
+    //    if (combinations.indexOf(cmbName) < 0)
+    //      combinations.push(cmbName);
+    //  }
+    //
+    //  if (combinations.length > 0) {
+    //    result.append("<br/>").append(combinations.join("<br/>"));
+    //    result.append("<br/><br/>");
+    //  } else {
+    //    result.append("<br/>Nenhuma opção disponível encontrada nesse caminho<br/><br/>");
+    //  }
+    //
+    //  result.dialog();
+    //  //result.append(JSON.stringify(data, null, 2));
+    //});
   });
 
   $("#tempoAndando").on("change", function (evt) {

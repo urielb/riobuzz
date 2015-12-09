@@ -1,5 +1,7 @@
 TODO-LIST
 
+* - Refazer geo referencia nos pontos de parada, mudar de array para object
+
 1) Processar os dados de pontos de parada com base nos trajetos de ida e volta para saber se cada ponto está na trajeto de ida e/ou volta;
 
 2) Considerar que os pontos de saída e chegada (entrada/saída/comutação) devem estar em sequência e dentro de um mesmo trajeto;

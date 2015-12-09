@@ -87,9 +87,37 @@ router.get('/processLineStopsSequency/', function (req, res, next) {
 
   dataProcessor.processLineStopsSequency(lines, function (processedLines, stops) {
     console.log("done processing");
-    console.log(processedLines);
     res.json(stops);
   });
+});
+
+/**
+ * Get stops for a trip of a given line
+ */
+router.get('/stops/line/:line/:trip', function (req, res, next) {
+  var line = global.lines[req.params.line];
+
+  if (line) {
+    var stopsHashArray = Object.keys(line.stops);
+    var stops = [];
+
+    for (var i = 0; i < stopsHashArray.length; i++) {
+      var stopHash = stopsHashArray[i];
+      var stop = line.stops[stopHash];
+
+      if (stop.trip == req.params.trip)
+        stops.push(stop);
+    }
+
+    stops.sort(function (a, b) {
+      return parseInt(a.order) - parseInt(b.order);
+    });
+
+    res.json(stops);
+  } else {
+    next();
+  }
+
 });
 
 module.exports = router;

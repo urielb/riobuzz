@@ -100,28 +100,31 @@ methods.processStops = function (callback) {
         stop.latitude = parseFloat(stop.latitude);
         stop.longitude = parseFloat(stop.longitude);
 
+        var hashStop = stop.latitude + "" + stop.longitude + "(" + stop.sequencia + ")";
+
         // Set up lines
+        var lineStop = {
+          geo: [stop.latitude, stop.longitude],
+          order: stop.sequencia,
+          trip: -1
+        };
+
         if (lines[stop.linha] != undefined) {
-          lines[stop.linha].stops.push({
-            geo: [stop.latitude, stop.longitude],
-            order: stop.sequencia,
-            trip: -1
-          });
+          lines[stop.linha].stops[hashStop] = lineStop;
+          //lines[stop.linha].stops.push(lineStop);
         } else {
           lines[stop.linha] = {
             line: stop.linha,
             description: stop.descricao,
             agency: stop.agencia,
-            stops: [{
-              geo: [stop.latitude, stop.longitude],
-              order: stop.sequencia,
-              trip: -1
-            }]
+            // stops: [lineStop]
+            stops: {}
           };
+
+          lines[stop.linha].stops[hashStop] = lineStop;
         }
 
         // Set up stops
-        var hashStop = stop.latitude + "" + stop.longitude;
         if (stops[hashStop] !== undefined) {
           if (stops[hashStop].lines.indexOf(stop.linha) == -1) {
             stops[hashStop].lines.push(stop.linha);
@@ -189,6 +192,8 @@ methods.processNearStops = function (callback) {
 methods.processLineStopsSequency = function (lines, callback) {
   console.log("Redoing lines stops sequency");
 
+  var processedLines = {};
+
   if (lines instanceof Function) {
     callback = lines;
     lines = Object.keys(global.lines);
@@ -196,7 +201,7 @@ methods.processLineStopsSequency = function (lines, callback) {
     lines = lines;
   } else if (lines instanceof Object) {
     lines = Object.keys(lines);
-  } else if (typeof lines === "string") {
+  } else if (typeof lines === "string" && lines != "") {
     var pattern = "[^\\d,]",
         re = new RegExp(pattern, "g");
     lines = lines.replace(re, "");
@@ -210,13 +215,15 @@ methods.processLineStopsSequency = function (lines, callback) {
     var line = global.lines[lines[i]];
     var stops = {};
 
-    for (var j = 0; j < line.stops.length; j++) {
-      var stop = line.stops[j];
+    var stopsHashArray = Object.keys(line.stops);
+    for (var j = 0; j < stopsHashArray.length; j++) {
+      var stopHash = stopsHashArray[j];
+      var stop = line.stops[stopHash];
 
       if (stops[stop.order])
-        stops[stop.order].push({geo: stop.geo, trip: stop.trip});
+        stops[stop.order].push({geo: stop.geo, trip: stop.trip, order: stop.order});
       else
-        stops[stop.order] = [{geo: stop.geo, trip: stop.trip}];
+        stops[stop.order] = [{geo: stop.geo, trip: stop.trip, order: stop.order}];
     }
 
     var stopsOrder = Object.keys(stops).sort(function (a, b) {
@@ -260,23 +267,41 @@ methods.processLineStopsSequency = function (lines, callback) {
             }
           }
 
-          usedStops.push(u);
+          if (stopTrip != -1) {
+            usedStops.push(stopTrip);
 
-          stops[stopsOrder[j]][stopTrip].trip = k;
-          currentTrip[currentStopNumber] = {
-            geo: stops[stopsOrder[j]][stopTrip].geo,
-            trip: stops[stopsOrder[j]][stopTrip].trip
-          };
+            stops[stopsOrder[j]][stopTrip].trip = k;
+            currentTrip[currentStopNumber] = {
+              geo: stops[stopsOrder[j]][stopTrip].geo,
+              trip: stops[stopsOrder[j]][stopTrip].trip
+            };
+          }
 
           // stops[stopsOrder[j]].splice(stopTrip, 1);
         }
       }
+
     }
 
-    console.log(stops);
+    // Finished processing trips for line
+    // Now should flatten the stops and update the line
+
+    var flattenedStops = [];
+    for (var j = 0; j < Object.keys(stops).length; j++) {
+      flattenedStops = flattenedStops.concat(stops[Object.keys(stops)[j]]);
+    }
+
+    for (var j = 0; j < flattenedStops.length; j++) {
+      var stop = flattenedStops[j];
+      var stopHash = "" + stop.geo[0] + stop.geo[1] + "(" + stop.order + ")";
+
+      line.stops[stopHash].trip = stop.trip;
+    }
+
+    processedLines[line.line] = line;
   }
 
-  callback(lines, stops);
+  callback(lines, global.lines);
 };
 
 module.exports = methods;
