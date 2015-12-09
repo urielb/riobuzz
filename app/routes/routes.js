@@ -120,4 +120,19 @@ router.get('/stops/line/:line/:trip', function (req, res, next) {
 
 });
 
+/**
+ * Show routes for a line
+ */
+router.get('/map/routes/:line', function (req, res, next) {
+  var line = global.lines[req.params.line];
+
+  if (line) {
+    res.render('map', {
+      line: line
+    });
+  } else {
+    next();
+  }
+});
+
 module.exports = router;
