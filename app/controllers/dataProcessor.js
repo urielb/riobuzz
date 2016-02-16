@@ -242,6 +242,8 @@ methods.processLineStopsSequency = function (lines, callback) {
 
     stopsOrder.splice(0,1);
 
+    var uncertainPoints = [];
+
     for (var j = 0; j < stopsOrder.length; j++) {
       var currentStopNumber = parseInt(stopsOrder[j], 10);
 
@@ -256,16 +258,24 @@ methods.processLineStopsSequency = function (lines, callback) {
           var stopsDistance = Infinity;
           var stopTrip = -1;
 
+          var stopsInRange = 0;
           for (var u = 0; u < stops[stopsOrder[j]].length; u++) {
             if (usedStops.indexOf(u) == -1) {
               var currentStop = stops[stopsOrder[j]][u];
               var distance = geo.calculateDistance(lastStop.geo, currentStop.geo, 'm');
+
+              if (distance <= 800)
+                stopsInRange++;
+
               if (distance < stopsDistance) {
                 stopsDistance = distance;
                 stopTrip = u;
               }
             }
           }
+
+          if (stopsInRange > 1)
+            uncertainPoints.push(currentStopNumber);
 
           if (stopTrip != -1) {
             usedStops.push(stopTrip);
@@ -281,6 +291,33 @@ methods.processLineStopsSequency = function (lines, callback) {
         }
       }
 
+    }
+
+    if (uncertainPoints.length > 0) {
+      // Rework paths
+      // console.log("There are uncertainties on line: " + line.line);
+      // console.log(uncertainPoints);
+
+      var aTrip = trips[0];
+      var bTrip = trips[1];
+      var aTripStops = Object.keys(aTrip);
+      var tripStartPoint = aTrip[aTripStops[0]];
+      var tripEndPoint = aTrip[aTripStops[aTripStops.length-1]];
+      var distance = geo.calculateDistance(tripStartPoint.geo, tripEndPoint.geo, 'm');
+      if (distance < 15000) {
+        console.log("Inconsitency on start and end position on line: " + line.line);
+        console.log("Trying to fix anomaly...");
+        var anomalyOrigin = parseInt(uncertainPoints[0], 10);
+        var lastStop = parseInt(stopsOrder[stopsOrder.length - 1], 10);
+        for (var j = anomalyOrigin; j <= lastStop; j++) {
+          for (var k = 0; k < stops[j].length; k++) {
+            var currentStop = stops[j][k];
+            currentStop.trip = (currentStop.trip == 0) ? 1 : 0;
+          }
+        }
+        // console.log(stops);
+        // console.log("Distance between start and stop: " + distance);
+      }
     }
 
     // Finished processing trips for line
