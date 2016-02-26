@@ -7,6 +7,35 @@ var markerOrigin;
 var markerDestination;
 
 $(function () {
+
+  function easyMarker(lat, lng, options) {
+    if (map == undefined || map == null)
+      return;
+
+    var defaults = {
+      icon: 'green-dot',
+      label: '0'
+    };
+
+    $.extend(options, defaults);
+
+    var latlng = {
+      lat: lat,
+      lng: lng
+    };
+
+    // green-dot
+    var icon = "http://maps.google.com/mapfiles/ms/icons/{0}.png";
+    icon.replace("{0}", options.icon);
+
+    var marker = new google.maps.Marker({
+      position: latlng,
+      map: map,
+      icon: icon,
+      label: options.label
+    });
+  }
+
   function initMap() {
     var aCoord = {lat: -22.936569, lng: -43.183814};
     var bCoord = {lat: -22.955238, lng: -43.164689};
@@ -80,6 +109,8 @@ $(function () {
           lat: stop.geo[0],
           lng: stop.geo[1]
         });
+
+        var ma
       }
 
       var stopsPath = new google.maps.Polyline({

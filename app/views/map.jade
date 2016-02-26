@@ -40,6 +40,42 @@ html(lang="en")
       var map;
 
       $(function () {
+        function easyMarker(lat, lng, options) {
+          if (map == undefined || map == null)
+            return;
+          var defaults = {
+            icon: 'green-dot',
+            title: "Stop",
+            text: ""
+          };
+
+          $.extend(defaults, options);
+
+          var latlng = {
+            lat: lat,
+            lng: lng
+          };
+
+          // green-dot
+          var icon = "http://maps.google.com/mapfiles/ms/icons/{0}.png";
+          icon = icon.replace("{0}", options.icon);
+
+          var infowindow = new google.maps.InfoWindow({
+            content: options.text
+          });
+
+          var marker = new google.maps.Marker({
+            position: latlng,
+            map: map,
+            icon: icon,
+            title: options.title
+          });
+
+          marker.addListener('click', function() {
+            infowindow.open(map, marker);
+          });
+        }
+
         function initMap() {
           map = new google.maps.Map(document.getElementById("map"), {
             center: {lat: -22.936569, lng: -43.183814},
@@ -50,10 +86,16 @@ html(lang="en")
 
         initMap();
 
-        $.get("/stops/line/" + line.line + "/0", function (data) {
+        function loadStops(data, icon) {
           var stopsCoords = [];
           for (var i = 0; i < data.length; i++) {
             var stop = data[i];
+            console.log(stop);
+
+            easyMarker(stop.geo[0], stop.geo[1], {
+              icon: icon,
+              text: "<p>Order: " + stop.order + "</p><p>lat: " + stop.geo[0] + "</p><p>lng: " + stop.geo[1] + "</p>"
+            });
 
             stopsCoords.push({
               lat: stop.geo[0],
@@ -61,40 +103,51 @@ html(lang="en")
             });
           }
 
-          var stopsPath = new google.maps.Polyline({
-            path: stopsCoords,
-            geodesic: true,
-            strokeColor: '#FF0000',
-            strokeOpacity: 1.0,
-            strokeWeight: 2
-          });
+          return stopsCoords;
+        }
 
-          stopsPath.setMap(map);
-
+        var initRoute = function () {
           var bounds = new google.maps.LatLngBounds();
-          var points = stopsPath.getPath().getArray();
-          for (var n = 0; n < points.length; n++)
-            bounds.extend(points[n]);
 
-          map.fitBounds(bounds);
-        });
+          $.get("/stops/line/" + line.line + "/0", function (data) {
+            var stopsCoords = loadStops(data, "red");
 
-        $.get("/stops/line/" + line.line + "/1", function (data) {
-          var stopsCoords = [];
-          for (var i = 0; i < data.length; i++) {
-            var stop = data[i];
-            stopsCoords.push({
-              lat: stop.geo[0],
-              lng: stop.geo[1]
+            var stopsPath = new google.maps.Polyline({
+              path: stopsCoords,
+              geodesic: true,
+              strokeColor: '#FF0000',
+              strokeOpacity: 1.0,
+              strokeWeight: 2
             });
-          }
-          var stopsPath = new google.maps.Polyline({
-            path: stopsCoords,
-            geodesic: true,
-            strokeColor: '#000088',
-            strokeOpacity: 1.0,
-            strokeWeight: 2
+
+            stopsPath.setMap(map);
+            var points = stopsPath.getPath().getArray();
+            for (var n = 0; n < points.length; n++)
+              bounds.extend(points[n]);
+
+            map.fitBounds(bounds);
           });
-          stopsPath.setMap(map);
-        });
+
+          $.get("/stops/line/" + line.line + "/1", function (data) {
+            var stopsCoords = loadStops(data, "blue");
+
+            var stopsPath = new google.maps.Polyline({
+              path: stopsCoords,
+              geodesic: true,
+              strokeColor: '#000088',
+              strokeOpacity: 1.0,
+              strokeWeight: 2
+            });
+            stopsPath.setMap(map);
+
+            var points = stopsPath.getPath().getArray();
+            for (var n = 0; n < points.length; n++)
+              bounds.extend(points[n]);
+
+            map.fitBounds(bounds);
+          });
+
+        };
+
+        initRoute();
       });
