@@ -127,12 +127,54 @@ router.get('/map/routes/:line', function (req, res, next) {
   var line = global.lines[req.params.line];
 
   if (line) {
-    res.render('map', {
-      line: line
-    });
+    if (global.invalidLines["#" + line.line]) {
+      res.json({
+        line: line.line,
+        error: 'Line listed on invalid lines',
+        reasons: global.invalidLines["#" + line.line]['reasons']
+      });
+    } else {
+      res.render('map', {
+        line: line
+      });
+    }
   } else {
     next();
   }
+});
+
+router.get('/workingLines', function (req, res, next) {
+  var workingLines = [];
+  for (var line in global.lines) {
+    if (global.invalidLines["#" + line] == undefined) {
+      workingLines.push(line);
+    }
+  }
+
+  res.render('workingLines', {
+    workingLines: workingLines
+  });
+});
+
+/**
+ * show faulty lines
+ */
+router.get('/faultyLines', function (req, res, next) {
+  res.json(global.invalidLines);
+});
+
+/**
+ *
+ */
+router.get('/reports', function (req, res, next) {
+  var jsonReport = {
+    invalidLinesCount: Object.keys(global.invalidLines).length,
+    invalidLines: global.invalidLines,
+    totalLinesCount: Object.keys(global.lines).length,
+    validLinesCount: Object.keys(global.lines).length - Object.keys(global.invalidLines).length
+  };
+
+  res.json(jsonReport);
 });
 
 module.exports = router;

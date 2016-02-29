@@ -16,7 +16,9 @@ app.set('view engine', 'jade');
 var rioBuzzDataProcessor = require('./controllers/dataProcessor');
 rioBuzzDataProcessor.processStops(function () {
   console.log("Data loaded: " + Object.keys(global.lines).length + " lines and " + Object.keys(global.stops).length + " stops found.");
-  rioBuzzDataProcessor.processLineStopsSequency2(global.lines["409"], function () {
+  var lineKeys = Object.keys(global.lines);
+
+  rioBuzzDataProcessor.processLineStopsSequency(function () {
     console.log("Finished processing lines stops sequency");
   });
   // rioBuzzDataProcessor.processNearStops(function() {});

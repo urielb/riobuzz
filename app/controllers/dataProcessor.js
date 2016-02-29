@@ -13,6 +13,8 @@ var config = require('../../config/settings');
 var url_all_stops_csv = "http://dadosabertos.rio.rj.gov.br/apiTransporte/Apresentacao/csv/gtfs/onibus/paradas/gtfs_todas-linhas-paradas.csv";
 var localStopsFile = 'resources/gtfs_todas-linhas-paradas.csv';
 
+global.invalidLines = {};
+
 var methods = {};
 
 function csv2json(csv, callback) {
@@ -189,8 +191,29 @@ methods.processNearStops = function (callback) {
   callback();
 };
 
+function randomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getOtherTrip (trips, trip) {
+  for (var i in trips) {
+    i = trips[i];
+
+    if (i.id != trip)
+      return i.id;
+  }
+}
+
+function addInvalidLine(line, reason) {
+  if (global.invalidLines["#" + line] != undefined) {
+    global.invalidLines["#" + line].reasons.push(reason);
+  } else {
+    global.invalidLines["#" + line] = {reasons: [reason]};
+  }
+}
+
 methods.processLineStopsSequency2 = function (line, callback) {
-  console.log("Processing line stops sequency");
+  console.log("Processing line stops sequency for line #" + line.line);
 
   var stops = {};
 
@@ -204,15 +227,255 @@ methods.processLineStopsSequency2 = function (line, callback) {
       stops[stop.order] = [{geo: stop.geo, trip: stop.trip, order: stop.order}];
   }
 
+  // Make and array of the line stops ordered
+  var stopsOrder = Object.keys(stops).sort(function (a, b) {
+    return parseInt(a, 10) - parseInt(b, 10);
+  });
+
+  // Trip class
+  function Trip (trip) {
+    this.id = trip;
+    this.start = null;
+    this.end = null;
+    this.stops = {};
+
+    return this;
+  }
+
+  Trip.prototype.addStop = function(stop) {
+    stop.trip = this.id;
+    this.stops[stop.order] = stop;
+  };
+
+  var trips = {
+    0: new Trip(0),
+    1: new Trip(1)
+  };
+
+  // If line doesnt have two stops with order 1, throw exception
+  if (stops['1'].length < 2) {
+    var message = "Not enough stops with order #1";
+    return addInvalidLine(line.line, message);
+  }
+
+  // Initialize trips
+  var tripA = trips[0];
+  var tripB = trips[1];
+  tripA.addStop(stops['1'][0]);
+  tripB.addStop(stops['1'][1]);
+  tripA.start = tripA.stops['1'];
+  tripB.start = tripB.stops['1'];
+
+  // Find last stops
+  // Garanteed getting last stops order
+  var lastStops = {};
+  for (var order in stops) {
+    var nextOrder = parseInt(order, 10) + 1;
+
+    if (stops[nextOrder] == undefined || stops[nextOrder].length < stops[order].length) {
+      lastStops[order] = stops[order];
+    }
+  }
+
+  var lastStopsOrder = Object.keys(lastStops).sort(function (a, b) {
+    return parseInt(b, 10) - parseInt(a, 10);
+  });
+
+  // Now I need to place the last stop accordingly to the trip
+  // Working for 409
+  for (var order in lastStopsOrder) {
+    order = lastStopsOrder[order];
+    var lastOrder = lastStops[order];
+    for (var stop in lastOrder) {
+      stop = lastOrder[stop];
+      var maxDistance = 0;
+      var stopTrip = null;
+
+      for (var trip in trips) {
+        trip = trips[trip];
+
+        var distanceStop = geo.calculateDistance(trip.start.geo, stop.geo);
+        if (distanceStop > maxDistance) {
+          maxDistance = distanceStop;
+          stopTrip = trip;
+        }
+      }
+
+      if (stopTrip.end == null) {
+        stopTrip.end = stop;
+        stopTrip.addStop(stop);
+      }
+    }
+  }
+
+  // Validate line ends
+  if (tripA.end == null || tripB.end == null) {
+    return addInvalidLine(line.line, "Couldn't find proper trip ends.");
+  }
+
+  for (var trip in trips) {
+    trip = trips[trip];
+    trip.end['final'] = true;
+  }
+
+  /**
+   * Now iter through all stops starting on stop with order 2, for each trip
+   * tries to find
+   */
+  for (var trip in trips) {
+    trip = trips[trip];
+
+    var currentStop = trip.start;
+    var endStop = trip.end;
+
+    var uncertainPoints = {};
+    // Keeps iterating over stops til end is found
+    var foundEnd = false;
+    //
+    //console.log(trips);
+    //console.log(stops);
+    // while (parseInt(currentStop.order, 10) < parseInt(endStop.order) && !foundEnd) {
+    var counter = 0;
+    while(currentStop != endStop) {
+      counter ++;
+      if (counter > 500) {
+        throw "Max iterations to solve line reached. Couldn't proccess line in less than 1000 iterations";
+      }
+      // console.log(currentStop, endStop);
+      // var beforeLastStopOrder = parseInt(endStop.order, 10) - 1;
+
+      // Will get closest point to last stop distance
+      //var checkDistance = Infinity;
+      //for (var j in stops[beforeLastStopOrder]) {
+      //  j = stops[beforeLastStopOrder][j];
+      //  var auxDistance = geo.calculateDistance(j.geo, endStop.geo, 'm');
+      //  if (auxDistance < checkDistance)
+      //    checkDistance = auxDistance;
+      //}
+
+      // verify if distance bewteen current stop and last stop is minimal, if not, restart
+      // checkDistance = geo.calculateDistance(currentStop.geo, endStop.geo, 'm') <= checkDistance;
+
+      // if (parseInt(currentStop.order, 10) == beforeLastStopOrder && !checkDistance) {
+      if (parseInt(currentStop.order, 10) == parseInt(endStop.order, 10) && (currentStop.final == undefined || currentStop.final == false)) {
+        var uncertainPointsOrders = Object.keys(uncertainPoints);
+        //var randomOrder = randomInt(0, uncertainPointsOrders.length-1);
+        //randomOrder = uncertainPointsOrders[randomOrder];
+        //var aux = uncertainPoints[randomOrder];
+        //for (var stopInUP in aux) {
+        //  stopInUP = aux[stopInUP];
+        //  stopInUP.trip = getOtherTrip(trips, trip.id);
+        // }
+
+        for (var k in stops[uncertainPointsOrders[0] - 1]) {
+          k = stops[uncertainPointsOrders[0] - 1][k];
+          if (k.trip == trip.id)
+            currentStop = k;
+        }
+      }
+
+      //else if (parseInt(currentStop.order, 10) == beforeLastStopOrder && checkDistance) {
+      //  foundEnd = true;
+      //}
+
+      // console.log(currentStop);
 
 
+      var currentOrder = currentStop.order;
+      var nextOrder = (parseInt(currentOrder, 10) + 1) + "";
+
+      var nextStops = stops[nextOrder];
+      var minDistance = Infinity;
+      var maxDistance = 0;
+      var minDistanceStop = null;
+      var maxDistanceStop = null;
+      var stopsInRange = 0;
+
+      for (var stop in nextStops) {
+        stop = nextStops[stop];
+
+        var distance = geo.calculateDistance(currentStop.geo, stop.geo, 'm');
+        if (distance < minDistance) {
+          minDistance = distance;
+          minDistanceStop = stop;
+        }
+
+        if (distance > maxDistance) {
+          maxDistance = distance;
+          maxDistanceStop = stop;
+        }
+
+        if (distance < 800) {
+          stopsInRange++;
+        }
+      }
+
+      if (stopsInRange > 1) {
+        uncertainPoints[nextOrder] = nextStops;
+        var randomStop = randomInt(0, nextStops.length - 1);
+        minDistanceStop = nextStops[randomStop];
+        currentStop == minDistanceStop;
+
+        for (var k in nextStops) {
+          k = nextStops[k];
+          if (k.geo[0] != minDistanceStop.geo[0]) {
+            k.trip = getOtherTrip(trips, trip.id);
+          }
+        }
+
+        minDistanceStop.trip = trip.id;
+
+      } else {
+      }
+
+      if (minDistanceStop != null)
+        currentStop = minDistanceStop;
+
+      //if (minDistanceStop == null) {
+      //  console.log(currentStop);
+      //  console.log(trips);
+      //  console.log(minDistance);
+      //  console.log(minDistanceStop);
+      //  console.log(maxDistance);
+      //  console.log(maxDistanceStop);
+      //}
+
+
+      if ((minDistanceStop.final == undefined || minDistanceStop.final == false)) {
+        minDistanceStop.trip = trip.id;
+      } else {
+        if (currentStop.trip == minDistanceStop.trip && minDistanceStop.final) {
+          currentStop = minDistanceStop;
+        } else if ((maxDistanceStop.final == undefined || maxDistanceStop.final == false)) {
+          maxDistanceStop.trip = trip.id;
+          currentStop = maxDistanceStop;
+        }
+      }
+
+    }
+  }
+
+
+
+  // Finished processing trips for line
+  // Now should flatten the stops and update the line
+
+  var flattenedStops = [];
+  for (var j = 0; j < Object.keys(stops).length; j++) {
+    flattenedStops = flattenedStops.concat(stops[Object.keys(stops)[j]]);
+  }
+
+  for (var j = 0; j < flattenedStops.length; j++) {
+    var stop = flattenedStops[j];
+    var stopHash = "" + stop.geo[0] + stop.geo[1] + "(" + stop.order + ")";
+
+    line.stops[stopHash].trip = stop.trip;
+  }
+
+  callback("Finished processing stops for line #" + line.line);
 };
 
 methods.processLineStopsSequency = function (lines, callback) {
-  console.log("Redoing lines stops sequency");
-
-  var processedLines = {};
-
   if (lines instanceof Function) {
     callback = lines;
     lines = Object.keys(global.lines);
@@ -230,149 +493,18 @@ methods.processLineStopsSequency = function (lines, callback) {
     lines = Object.keys(global.lines);
   }
 
-  for (var i = 0; i < lines.length; i++) {
-    var line = global.lines[lines[i]];
-    var stops = {};
+  for (var line in lines) {
+    line = global.lines[lines[line]];
 
-    var stopsHashArray = Object.keys(line.stops);
-    for (var j = 0; j < stopsHashArray.length; j++) {
-      var stopHash = stopsHashArray[j];
-      var stop = line.stops[stopHash];
-
-      if (stops[stop.order])
-        stops[stop.order].push({geo: stop.geo, trip: stop.trip, order: stop.order});
-      else
-        stops[stop.order] = [{geo: stop.geo, trip: stop.trip, order: stop.order}];
+    try {
+      methods.processLineStopsSequency2(line, function (message) {
+        console.log(message);
+      })
+    } catch (error) {
+      console.error(error);
+      addInvalidLine(line.line, error);
     }
-
-    var stopsOrder = Object.keys(stops).sort(function (a, b) {
-      return parseInt(a, 10) - parseInt(b, 10);
-    });
-
-
-    // Start a trip array containing possible trips
-    var trips = [];
-    for (var j = 0; j < stops[stopsOrder[0]].length; j++) {
-      stops[stopsOrder[0]][j].trip = j;
-      trips[j] = {};
-      trips[j][stopsOrder[0]] = {
-        geo: stops[stopsOrder[0]][j].geo,
-        trip: stops[stopsOrder[0]][j].trip
-      }; // Start a new trip with one of the initil points
-    }
-
-    // Removes first stops from trip
-    stopsOrder.splice(0,1);
-
-    var uncertainPoints = [];
-
-    for (var j = 0; j < stopsOrder.length; j++) {
-      var currentStopNumber = parseInt(stopsOrder[j], 10);
-
-      var usedStops = [];
-      for (var k = 0; k < trips.length; k++) {
-        var currentTrip = trips[k];
-        var tripStops = Object.keys(currentTrip);
-        var lastStopNumber = parseInt(tripStops[tripStops.length - 1], 10);
-        var lastStop = currentTrip[lastStopNumber];
-
-        if (lastStopNumber == currentStopNumber - 1) {
-          var stopsDistance = Infinity;
-          var stopTrip = -1;
-
-          var stopsInRange = 0;
-          for (var u = 0; u < stops[stopsOrder[j]].length; u++) {
-            if (usedStops.indexOf(u) == -1) {
-              var currentStop = stops[stopsOrder[j]][u];
-              var distance = geo.calculateDistance(lastStop.geo, currentStop.geo, 'm');
-
-              if (distance <= 450) {
-                stopsInRange++;
-              }
-
-              if (stopsInRange > 1) {
-                if (line.line == "409")
-                  console.log(currentStop, distance);
-              }
-
-              if (distance < stopsDistance) {
-                stopsDistance = distance;
-                stopTrip = u;
-              }
-            }
-          }
-
-          if (stopsInRange > 1)
-            uncertainPoints.push(currentStopNumber);
-
-          if (stopTrip != -1) {
-            usedStops.push(stopTrip);
-
-            stops[stopsOrder[j]][stopTrip].trip = k;
-            currentTrip[currentStopNumber] = {
-              geo: stops[stopsOrder[j]][stopTrip].geo,
-              trip: stops[stopsOrder[j]][stopTrip].trip
-            };
-          }
-
-          // stops[stopsOrder[j]].splice(stopTrip, 1);
-        }
-      }
-
-    }
-
-    if (line.line == "409")
-      console.log(uncertainPoints);
-
-    if (uncertainPoints.length > 0) {
-      // Rework paths
-      // console.log("There are uncertainties on line: " + line.line);
-      // console.log(uncertainPoints);
-
-      for (var u = 0; u < uncertainPoints.length; u++) {
-        var aTrip = trips[0];
-        var bTrip = trips[1];
-        var aTripStops = Object.keys(aTrip);
-        var tripStartPoint = aTrip[aTripStops[0]];
-        var tripEndPoint = aTrip[aTripStops[aTripStops.length - 1]];
-        var distance = geo.calculateDistance(tripStartPoint.geo, tripEndPoint.geo, 'm');
-
-        if (distance < 15000) {
-          // console.log("Inconsitency on start and end position on line: " + line.line);
-          // console.log("Trying to fix anomaly...");
-          var anomalyOrigin = parseInt(uncertainPoints[u], 10);
-          var lastStop = parseInt(stopsOrder[stopsOrder.length - 1], 10);
-          for (var j = anomalyOrigin; j <= lastStop; j++) {
-            for (var k = 0; k < stops[j].length; k++) {
-              var currentStop = stops[j][k];
-              currentStop.trip = (currentStop.trip == 0) ? 1 : 0;
-            }
-          }
-        } else {
-          uncertainPoints = [];
-        }
-      }
-    }
-
-    // Finished processing trips for line
-    // Now should flatten the stops and update the line
-
-    var flattenedStops = [];
-    for (var j = 0; j < Object.keys(stops).length; j++) {
-      flattenedStops = flattenedStops.concat(stops[Object.keys(stops)[j]]);
-    }
-
-    for (var j = 0; j < flattenedStops.length; j++) {
-      var stop = flattenedStops[j];
-      var stopHash = "" + stop.geo[0] + stop.geo[1] + "(" + stop.order + ")";
-
-      line.stops[stopHash].trip = stop.trip;
-    }
-
-    processedLines[line.line] = line;
   }
-
-  callback(lines, global.lines);
 };
 
 module.exports = methods;

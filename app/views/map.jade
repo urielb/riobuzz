@@ -39,43 +39,43 @@ html(lang="en")
       var line = !{JSON.stringify(line)};
       var map;
 
+      function easyMarker(lat, lng, options) {
+        if (map == undefined || map == null)
+          return;
+        var defaults = {
+          icon: 'green-dot',
+          title: "Stop",
+          text: ""
+        };
+
+        $.extend(defaults, options);
+
+        var latlng = {
+          lat: lat,
+          lng: lng
+        };
+
+        // green-dot
+        var icon = "http://maps.google.com/mapfiles/ms/icons/{0}.png";
+        icon = icon.replace("{0}", options.icon);
+
+        var infowindow = new google.maps.InfoWindow({
+          content: options.text
+        });
+
+        var marker = new google.maps.Marker({
+          position: latlng,
+          map: map,
+          icon: icon,
+          title: options.title
+        });
+
+        marker.addListener('click', function() {
+          infowindow.open(map, marker);
+        });
+      }
+
       $(function () {
-        function easyMarker(lat, lng, options) {
-          if (map == undefined || map == null)
-            return;
-          var defaults = {
-            icon: 'green-dot',
-            title: "Stop",
-            text: ""
-          };
-
-          $.extend(defaults, options);
-
-          var latlng = {
-            lat: lat,
-            lng: lng
-          };
-
-          // green-dot
-          var icon = "http://maps.google.com/mapfiles/ms/icons/{0}.png";
-          icon = icon.replace("{0}", options.icon);
-
-          var infowindow = new google.maps.InfoWindow({
-            content: options.text
-          });
-
-          var marker = new google.maps.Marker({
-            position: latlng,
-            map: map,
-            icon: icon,
-            title: options.title
-          });
-
-          marker.addListener('click', function() {
-            infowindow.open(map, marker);
-          });
-        }
-
         function initMap() {
           map = new google.maps.Map(document.getElementById("map"), {
             center: {lat: -22.936569, lng: -43.183814},
@@ -94,7 +94,7 @@ html(lang="en")
 
             easyMarker(stop.geo[0], stop.geo[1], {
               icon: icon,
-              text: "<p>Order: " + stop.order + "</p><p>lat: " + stop.geo[0] + "</p><p>lng: " + stop.geo[1] + "</p>"
+              text: "<p>Order: " + stop.order + " (" + stop.trip + ") </p><p>lat: " + stop.geo[0] + "</p><p>lng: " + stop.geo[1] + "</p>"
             });
 
             stopsCoords.push({
