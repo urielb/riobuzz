@@ -344,6 +344,15 @@ methods.processLineStopsSequency2 = function (line, callback) {
     trip.end['final'] = true;
   }
 
+  if (parseInt(tripA.end.order, 10) < parseInt(tripB.end.order, 10)) {
+    trips = {
+      0: tripB,
+      1: tripA
+    };
+    // console.log(tripA.end, tripB.end);
+    // trips.splice(0, 1, tripA);
+  }
+
   /**
    * UPDATE #####
    * THERE IS NO NEED TO ITER ON ALL TRIPS, SINCE IF A STOP DOESNT BELONG TO ONE TRIP, IT WILL BELONG TO THE OTHER
