@@ -212,17 +212,6 @@ function addInvalidLine(line, reason) {
   }
 }
 
-function stopSetTrip(stop, trip) {
-  for (var i in stops[stop.order]) {
-    i = stops[stop.order][i];
-    if (i.geo[0] == stop.geo[0] && i.geo[1] == stop.geo[1]) {
-      i.trip = trip;
-    } else {
-      i.trip = getOtherTrip(trips, trip);
-    }
-  }
-}
-
 function stopCompare(stopA, stopB) {
   if (stopA.order != stopB.order)
     return false;
@@ -301,6 +290,19 @@ methods.processLineStopsSequency2 = function (line, callback) {
     }
   }
 
+  function stopSetTrip(stop, trip) {
+    stop.trip = trip;
+    for (var i in stops[stop.order]) {
+      i = stops[stop.order][i];
+      if (!stopCompare(i, stop)) {
+        i.trip = getOtherTrip(trips, trip);
+      }
+
+    }
+
+    return stop;
+  }
+
   var lastStopsOrder = Object.keys(lastStops).sort(function (a, b) {
     return parseInt(b, 10) - parseInt(a, 10);
   });
@@ -371,7 +373,7 @@ methods.processLineStopsSequency2 = function (line, callback) {
         break;
       }
 
-      console.log(currentStop, endStop);
+      // console.log(currentStop, endStop);
       if (currentStop.order == endStop.order && !stopCompare(currentStop, endStop)) {
         backtracking = true;
       }
@@ -417,9 +419,9 @@ methods.processLineStopsSequency2 = function (line, callback) {
         }
 
         if (minDistanceStop != null) {
-          stopSetTrip(minDistanceStop, trip.id);
-          currentStop = minDistanceStop;
-          currentStop.trip = trip.id;
+          currentStop = stopSetTrip(minDistanceStop, trip.id);
+          // currentStop = minDistanceStop;
+          // currentStop.trip = trip.id;
         }
 
         if (stopsInRange > 1) {
