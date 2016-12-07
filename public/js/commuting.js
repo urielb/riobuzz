@@ -67,11 +67,11 @@ $(function () {
   }
 
   $("#search").on('click', function () {
-    var initial = markerOrigin.getPosition().toString();
-    var arrival = markerDestination.getPosition().toString();
-    initial = initial.replace(" ", "").replace("(", "").replace(")", "");
-    arrival = arrival.replace(" ", "").replace("(", "").replace(")", "");
-    var walkingTime = $("#tempoAndando").val();
+    var origin = markerOrigin.getPosition().toString();
+    var destination = markerDestination.getPosition().toString();
+    origin = origin.replace(" ", "").replace("(", "").replace(")", "");
+    destination = destination.replace(" ", "").replace("(", "").replace(")", "");
+    // var walkingTime = $("#tempoAndando").val();
 
     //initial = JSON.parse("[" + initial + "]");
     //arrival = JSON.parse("[" + arrival + "]");
@@ -79,50 +79,11 @@ $(function () {
     var result = $("#result");
     result.html("");
 
+    $.get("/api/generate/routes/" + origin + "/" + destination, function (data) {
+      console.log(data);
+    });
+
     // $.get("/getCommutingPoints/?initial=" + initial + "&arrival=" + arrival, function (data) {
-    $.get("/stops/line/512/0", function (data) {
-      var stopsCoords = [];
-      for (var i = 0; i < data.length; i++) {
-        var stop = data[i];
-        stopsCoords.push({
-          lat: stop.geo[0],
-          lng: stop.geo[1]
-        });
-      }
-
-      var stopsPath = new google.maps.Polyline({
-        path: stopsCoords,
-        geodesic: true,
-        strokeColor: '#FF0000',
-        strokeOpacity: 1.0,
-        strokeWeight: 2
-      });
-
-      stopsPath.setMap(map);
-    });
-
-    $.get("/stops/line/512/1", function (data) {
-      var stopsCoords = [];
-      for (var i = 0; i < data.length; i++) {
-        var stop = data[i];
-        stopsCoords.push({
-          lat: stop.geo[0],
-          lng: stop.geo[1]
-        });
-
-        var ma
-      }
-
-      var stopsPath = new google.maps.Polyline({
-        path: stopsCoords,
-        geodesic: true,
-        strokeColor: '#000088',
-        strokeOpacity: 1.0,
-        strokeWeight: 2
-      });
-
-      stopsPath.setMap(map);
-    });
 
     //  var combinations = [];
     //  for (var i = 0; i < data.length; i++) {

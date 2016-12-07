@@ -6,6 +6,7 @@ var express = require('express');
 var router = express.Router();
 
 var dataProcessor = require('../controllers/dataProcessor');
+var api = require("../controllers/api");
 
 /**
  * Main action
@@ -175,6 +176,23 @@ router.get('/reports', function (req, res, next) {
   };
 
   res.json(jsonReport);
+});
+
+/**
+ * Action to calculate route given origin and destiny points
+ */
+router.get('/api/generate/routes/:origin/:destination', function (req, res, next) {
+  var origin = req.params.origin;
+  var destination = req.params.destination;
+
+  origin = origin.split(',');
+  destination = destination.split(',');
+
+  var routes = api.findRoutes(origin, destination);
+
+  // console.log(origin, destiny);
+
+  res.json({});
 });
 
 module.exports = router;

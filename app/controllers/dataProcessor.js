@@ -13,6 +13,8 @@ var config = require('../../config/settings');
 var url_all_stops_csv = "http://dadosabertos.rio.rj.gov.br/apiTransporte/Apresentacao/csv/gtfs/onibus/paradas/gtfs_todas-linhas-paradas.csv";
 var localStopsFile = 'resources/gtfs_todas-linhas-paradas.csv';
 
+var Stop = require("../models/stop");
+
 global.invalidLines = {};
 
 var methods = {};
@@ -102,9 +104,14 @@ methods.processStops = function (callback) {
         stop.latitude = parseFloat(stop.latitude);
         stop.longitude = parseFloat(stop.longitude);
 
-        var hashStop = stop.latitude + "" + stop.longitude + "(" + stop.sequencia + ")";
+        var hashStop = stop.latitude + "" + stop.longitude; // + "(" + stop.sequencia + ")";
+        var hashLStop = stop.latitude + "" + stop.longitude + "(" + stop.sequencia + ")";
 
+        // console.log(stop);
+
+        //
         // Set up lines
+        //
         var lineStop = {
           geo: [stop.latitude, stop.longitude],
           order: stop.sequencia,
@@ -112,10 +119,11 @@ methods.processStops = function (callback) {
         };
 
         if (lines[stop.linha] != undefined) {
-          lines[stop.linha].stops[hashStop] = lineStop;
-          //lines[stop.linha].stops.push(lineStop);
+          lines[stop.linha].stops[hashLStop] = lineStop;
+          // lines[stop.linha].stops.push(lineStop);
         } else {
-          lines[stop.linha] = {
+
+          var line = {
             line: stop.linha,
             description: stop.descricao,
             agency: stop.agencia,
@@ -123,10 +131,13 @@ methods.processStops = function (callback) {
             stops: {}
           };
 
-          lines[stop.linha].stops[hashStop] = lineStop;
+          line.stops[hashLStop] = lineStop;
+          lines[stop.linha] = line;
         }
 
+        //
         // Set up stops
+        //
         if (stops[hashStop] !== undefined) {
           if (stops[hashStop].lines.indexOf(stop.linha) == -1) {
             stops[hashStop].lines.push(stop.linha);
@@ -134,7 +145,7 @@ methods.processStops = function (callback) {
         } else {
           stops[hashStop] = {
             geo: [stop.latitude, stop.longitude],
-            lines: [],
+            lines: [stop.linha],
             closeStops: []
           };
         }
@@ -160,19 +171,8 @@ methods.processNearStops = function (callback) {
   console.log("Processing near stops");
   console.log();
 
-  var bar = new ProgressBar('  processing [:bar] :percent :etas', {
-    complete: '=',
-    incomplete: ' ',
-    width: 100,
-    total: stopHashArray.length
-  });
-
   for (var i = 0; i < stopHashArray.length; i++) {
     var stop = global.stops[stopHashArray[i]];
-    bar.tick(1);
-    if (bar.complete) {
-      console.log('\ncomplete\n');
-    }
 
     for (var j = 0; j < stopHashArray.length; j++) {
       if (i != j) {
@@ -185,6 +185,8 @@ methods.processNearStops = function (callback) {
         }
       }
     }
+
+    console.log(i + " out of " + stopHashArray.length + " done.");
   }
 
   console.log("Finished processing near stops");
@@ -231,6 +233,8 @@ methods.processLineStopsSequency2 = function (line, callback) {
   var stops = {};
 
   // Populate stops object in order
+  // console.log(line.stops);
+
   for (var stopHash in line.stops) {
     var stop = line.stops[stopHash];
 
@@ -265,11 +269,15 @@ methods.processLineStopsSequency2 = function (line, callback) {
     1: new Trip(1)
   };
 
+   //console.log(stops);
+
   // If line doesnt have two stops with order 1, throw exception
   if (stops['1'].length < 2) {
     var message = "Not enough stops with order #1";
     return addInvalidLine(line.line, message);
   }
+
+   //console.log("OKA");
 
   // Initialize trips
   var tripA = trips[0];
@@ -292,10 +300,10 @@ methods.processLineStopsSequency2 = function (line, callback) {
 
   function stopSetTrip(stop, trip) {
     stop.trip = trip;
-    for (var i in stops[stop.order]) {
-      i = stops[stop.order][i];
-      if (!stopCompare(i, stop)) {
-        i.trip = getOtherTrip(trips, trip);
+    for (var i = 0; i < stops[stop.order].length; i++) {
+      var aux = stops[stop.order][i];
+      if (!stopCompare(aux, stop)) {
+        aux.trip = getOtherTrip(trips, trip);
       }
 
     }

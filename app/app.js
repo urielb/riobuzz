@@ -18,10 +18,12 @@ rioBuzzDataProcessor.processStops(function () {
   console.log("Data loaded: " + Object.keys(global.lines).length + " lines and " + Object.keys(global.stops).length + " stops found.");
   var lineKeys = Object.keys(global.lines);
 
-  rioBuzzDataProcessor.processLineStopsSequency(function () {
+  // rioBuzzDataProcessor.processNearStops(function() {});
+
+  rioBuzzDataProcessor.processLineStopsSequency("409", function () {
     console.log("Finished processing lines stops sequency");
   });
-  // rioBuzzDataProcessor.processNearStops(function() {});
+
 });
 /*  */
 
