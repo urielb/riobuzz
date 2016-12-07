@@ -34,7 +34,7 @@ html(lang="en")
 
     script(src="/js/jquery-2.1.4.min.js")
     script(type='text/javascript', src='/js/jquery-ui.min.js', charset="utf-8")
-    script(src="https://maps.googleapis.com/maps/api/js")
+    script(src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAvX07lBusz-EBcdMIotV66YKbhas-DNEI")
     script(type='text/javascript').
       var line = !{JSON.stringify(line)};
       var map;
@@ -109,7 +109,7 @@ html(lang="en")
         var initRoute = function () {
           var bounds = new google.maps.LatLngBounds();
 
-          $.get("/stops/line/" + line.line + "/0", function (data) {
+          $.get("/stops/line/" + line.line + "/1", function (data) {
             var stopsCoords = loadStops(data, "red");
 
             var stopsPath = new google.maps.Polyline({
@@ -128,7 +128,7 @@ html(lang="en")
             map.fitBounds(bounds);
           });
 
-          $.get("/stops/line/" + line.line + "/1", function (data) {
+          /* $.get("/stops/line/" + line.line + "/1", function (data) {
             var stopsCoords = loadStops(data, "blue");
 
             var stopsPath = new google.maps.Polyline({
@@ -145,7 +145,7 @@ html(lang="en")
               bounds.extend(points[n]);
 
             map.fitBounds(bounds);
-          });
+          }); */
 
         };
 
