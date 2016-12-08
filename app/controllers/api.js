@@ -63,6 +63,9 @@ function matchDirectLines (origem, destino, initialStops, finalStops) {
       var matchInicial = linhaRegexp.exec(pontoInicial);
       var linhaInicial = matchInicial[1];
 
+      if (Object.keys(matchingLines).length >= 3)
+        return matchingLines;
+
       /**
        * Agora verifica se os dois pontos estão no mesmo trajeto e o final tem ordem maior que o inicial
        */
@@ -100,17 +103,109 @@ function matchDirectLines (origem, destino, initialStops, finalStops) {
   return matchingLines;
 }
 
-function matchCommutingLines (origem, destino, initialStops, finalStops) {
+function matchCommutingLines (origem, destino, initialStops, finalStops, directLines) {
   var matchingLines = {};
+
+  function validaPonto(linha, pontoFinal, coordenadas, ordem) {
+    var pontoAnalisado = global.lines[linha].stops[coordenadas[0] + "" + coordenadas[1] + "(" + ordem + ")"];
+    if (pontoFinal.trip != -1 && pontoFinal.trip == pontoAnalisado.trip && pontoFinal.order > pontoAnalisado.order)
+      return true;
+
+    return false;
+  }
 
   function getLinhaProximosPontos(linha, ponto) {
     var ponto = ponto.replace("#" + linha, "");
-    var pontoInicio = global.lines[linha].stops[ponto];
+    var linha = global.lines[linha];
+    var pontoInicio = linha.stops[ponto];
 
-    console.log(linha, pontoInicio);
-    return [];
+    var proximosPontos = [];
+
+    for (pontoAtual in linha.stops) {
+      pontoAtual = linha.stops[pontoAtual];
+
+      if (pontoInicio.trip == pontoAtual.trip && pontoInicio.order < pontoAtual.order)
+        proximosPontos.push(pontoAtual);
+    }
+
+    return proximosPontos;
   }
 
+  function checkComutacaoPontosProximos(linha, destino, pontos) {
+    var destino = destino.replace("#" + linha, "");
+    var linha = global.lines[linha];
+    var pontoFinal = linha.stops[destino];
+
+    for (var i = 0; i < pontos.length; i++) {
+      var pontoFocal = pontos[i];
+      pontoFocal = global.stops[pontoFocal.geo[0] + "" + pontoFocal.geo[1]];
+
+      for (var k = 0; k < pontoFocal.closeStops.length; k++) {
+        var pontoAnalise = pontoFocal.closeStops[k];
+        pontoAnalise = global.stops[pontoAnalise.geo[0] + "" + pontoAnalise.geo[1]];
+
+        // console.log(pontoAnalise);
+        // Olha nos pontos seguintes de uma determinada linha, se passa a linha do ponto final
+        for (var j = 0; j < pontoAnalise.lines.length; j++) {
+          if (pontoAnalise.lines[j].indexOf(linha.line) != -1) {
+            var ordem = (/\((.*?)\)/g).exec(pontoAnalise.lines[j])[1];
+            // A ordem do ponto analisado precisa ser menor do que o ponto final, senao nao é possível alcancar aquele ponto
+            if (ordem < parseInt(pontoFinal.order, 10)) {
+              // valida se os dois pontos sao do mesmo trajeto
+              if (validaPonto(linha.line, pontoFinal, pontoAnalise.geo, ordem)) {
+                // Registra comutação
+                return {
+                  pontoComutacao1: pontoFocal,
+                  pontoComutacao2: pontoAnalise
+                };
+              }
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  function checkComutacao(linha, destino, pontos) {
+    var destino = destino.replace("#" + linha, "");
+    var linha = global.lines[linha];
+    var pontoFinal = linha.stops[destino];
+
+    for (var i = 0; i < pontos.length; i++) {
+      var pontoAnalise = pontos[i];
+      pontoAnalise = global.stops[pontoAnalise.geo[0] + "" + pontoAnalise.geo[1]];
+      // console.log(pontoAnalise);
+
+      // Olha nos pontos seguintes de uma determinada linha, se passa a linha do ponto final
+        for (var j = 0; j < pontoAnalise.lines.length; j++) {
+          if (pontoAnalise.lines[j].indexOf(linha.line) != -1) {
+            var ordem = (/\((.*?)\)/g).exec(pontoAnalise.lines[j])[1];
+            // A ordem do ponto analisado precisa ser menor do que o ponto final, senao nao é possível alcancar aquele ponto
+            if (ordem < parseInt(pontoFinal.order, 10)) {
+              // valida se os dois pontos sao do mesmo trajeto
+              if (validaPonto(linha.line, pontoFinal, pontoAnalise.geo, ordem)) {
+                // Registra comutação
+                return {
+                  pontoComutacao1: pontoAnalise
+                };
+              }
+            }
+          }
+        }
+    }
+    return false;
+
+  }
+
+  function getPonto(stringPonto) {
+    var linha = (/#(.*?)\(/g).exec(stringPonto)[1];
+    var ponto = stringPonto.replace("#" + linha, "");
+
+    return global.lines[linha].stops[ponto];
+  }
+
+  // Procura comutacoes no proprio ponto
   for (var i = 0; i < finalStops.length; i++) {
     var pontoFinal = finalStops[i];
     var linhaRegexp= /#(.*?)\(/g;
@@ -123,7 +218,54 @@ function matchCommutingLines (origem, destino, initialStops, finalStops) {
       var matchInicial = linhaRegexp.exec(pontoInicial);
       var linhaInicial = matchInicial[1];
 
-      getLinhaProximosPontos(linhaInicial, pontoInicial);
+      if (getPonto(pontoInicial).trip == -1 || linhaFinal == linhaInicial ||
+          (Object.keys(directLines).indexOf(linhaInicial) != -1 || Object.keys(directLines).indexOf(linhaFinal) != -1))
+        continue;
+
+      var proximosPontos = getLinhaProximosPontos(linhaInicial, pontoInicial);
+      // console.log(proximosPontos);
+      var pontoComutacao = checkComutacao(linhaFinal, pontoFinal, proximosPontos);
+      if (pontoComutacao != false) {
+        pontoComutacao['pontoInicial'] = getPonto(pontoInicial);
+        pontoComutacao['pontoFinal'] = getPonto(pontoFinal);
+
+        matchingLines[linhaInicial + ' x ' + linhaFinal] = pontoComutacao;
+      }
+
+      if (Object.keys(matchingLines).length >= 3)
+        return matchingLines;
+    }
+  }
+
+  // Procura comutacoes nos pontos proximos
+  for (var i = 0; i < finalStops.length; i++) {
+    var pontoFinal = finalStops[i];
+    var linhaRegexp = /#(.*?)\(/g;
+    var matchFinal = linhaRegexp.exec(pontoFinal);
+    var linhaFinal = matchFinal[1];
+
+    for (var j = 0; j < initialStops.length; j++) {
+      linhaRegexp = /#(.*?)\(/g;
+      var pontoInicial = initialStops[j];
+      var matchInicial = linhaRegexp.exec(pontoInicial);
+      var linhaInicial = matchInicial[1];
+
+      if (getPonto(pontoInicial).trip == -1 || linhaFinal == linhaInicial ||
+          (Object.keys(directLines).indexOf(linhaInicial) != -1 || Object.keys(directLines).indexOf(linhaFinal) != -1))
+        continue;
+
+      var proximosPontos = getLinhaProximosPontos(linhaInicial, pontoInicial);
+
+      var pontoComutacao = checkComutacaoPontosProximos(linhaFinal, pontoFinal, proximosPontos);
+      if (pontoComutacao !== false) {
+        pontoComutacao['pontoInicial'] = getPonto(pontoInicial);
+        pontoComutacao['pontoFinal'] = getPonto(pontoFinal);
+
+        matchingLines[linhaInicial + ' x ' + linhaFinal] = pontoComutacao;
+      }
+
+      if (Object.keys(matchingLines).length >= 3)
+        return matchingLines;
     }
   }
 
@@ -164,8 +306,8 @@ methods.findRoutes = function (origin, destination) {
   console.log("originNearStops", originNearStops.length);
   console.log("destinationNearStops", destinationNearStops.length);
 
-  // var directLines = matchDirectLines(origin, destination, initialStops, finalStops);
-  var commutingLines = matchCommutingLines(origin, destination, initialStops, finalStops);
+  var directLines = matchDirectLines(origin, destination, initialStops, finalStops);
+  var commutingLines = matchCommutingLines(origin, destination, initialStops, finalStops, directLines);
 
   return {
     directLines: directLines,

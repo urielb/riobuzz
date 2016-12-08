@@ -14,15 +14,16 @@ app.set('view engine', 'jade');
 // load lines and stops with dataProcessor
 /* */
 var rioBuzzDataProcessor = require('./controllers/dataProcessor');
-rioBuzzDataProcessor.processStops(function () {
+rioBuzzDataProcessor.processStops(function (loadedFromJson) {
   console.log("Data loaded: " + Object.keys(global.lines).length + " lines and " + Object.keys(global.stops).length + " stops found.");
   var lineKeys = Object.keys(global.lines);
 
   // rioBuzzDataProcessor.processNearStops(function() {});
-
-  rioBuzzDataProcessor.processLineStopsSequency(function () {
-    console.log("Finished processing lines stops sequency");
-  });
+  if (loadedFromJson !== true) {
+    rioBuzzDataProcessor.processLineStopsSequency(function () {
+      console.log("Finished processing lines stops sequency");
+    });
+  }
 
 });
 /*  */

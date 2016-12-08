@@ -128,25 +128,6 @@ html(lang="en")
             map.fitBounds(bounds);
           });
 
-          /* $.get("/stops/line/" + line.line + "/1", function (data) {
-            var stopsCoords = loadStops(data, "blue");
-
-            var stopsPath = new google.maps.Polyline({
-              path: stopsCoords,
-              geodesic: true,
-              strokeColor: '#000088',
-              strokeOpacity: 1.0,
-              strokeWeight: 2
-            });
-            stopsPath.setMap(map);
-
-            var points = stopsPath.getPath().getArray();
-            for (var n = 0; n < points.length; n++)
-              bounds.extend(points[n]);
-
-            map.fitBounds(bounds);
-          }); */
-
         };
 
         initRoute();
