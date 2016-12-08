@@ -192,7 +192,7 @@ router.get('/api/generate/routes/:origin/:destination', function (req, res, next
 
   // console.log(origin, destiny);
 
-  res.json({});
+  res.json(routes);
 });
 
 module.exports = router;

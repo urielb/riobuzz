@@ -20,7 +20,7 @@ rioBuzzDataProcessor.processStops(function () {
 
   // rioBuzzDataProcessor.processNearStops(function() {});
 
-  rioBuzzDataProcessor.processLineStopsSequency("409", function () {
+  rioBuzzDataProcessor.processLineStopsSequency(function () {
     console.log("Finished processing lines stops sequency");
   });
 

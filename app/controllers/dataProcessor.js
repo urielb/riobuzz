@@ -92,72 +92,78 @@ methods.loadStopsCSV = function (callback) {
  * @param callback
  */
 methods.processStops = function (callback) {
-  var stops = {};
-  var lines = {};
-  console.log("Processing Stops...");
+  var stops = require("../../resources/stops.json").stops;
+  var lines = require("../../resources/lines.json").lines;
+  global.stops = stops;
+  global.lines = lines;
+  console.log("Lines and stops loaded.");
+  // console.log("Processing Stops...");
 
-  methods.loadStopsCSV(function (err, output) {
-    if (err) callback(err, {}, {});
-    else {
-      for (var i = 0; i < output.length; i++) {
-        var stop = output[i];
-        stop.latitude = parseFloat(stop.latitude);
-        stop.longitude = parseFloat(stop.longitude);
-
-        var hashStop = stop.latitude + "" + stop.longitude; // + "(" + stop.sequencia + ")";
-        var hashLStop = stop.latitude + "" + stop.longitude + "(" + stop.sequencia + ")";
-
-        // console.log(stop);
-
-        //
-        // Set up lines
-        //
-        var lineStop = {
-          geo: [stop.latitude, stop.longitude],
-          order: stop.sequencia,
-          trip: -1
-        };
-
-        if (lines[stop.linha] != undefined) {
-          lines[stop.linha].stops[hashLStop] = lineStop;
-          // lines[stop.linha].stops.push(lineStop);
-        } else {
-
-          var line = {
-            line: stop.linha,
-            description: stop.descricao,
-            agency: stop.agencia,
-            // stops: [lineStop]
-            stops: {}
-          };
-
-          line.stops[hashLStop] = lineStop;
-          lines[stop.linha] = line;
-        }
-
-        //
-        // Set up stops
-        //
-        if (stops[hashStop] !== undefined) {
-          if (stops[hashStop].lines.indexOf(stop.linha) == -1) {
-            stops[hashStop].lines.push(stop.linha);
-          }
-        } else {
-          stops[hashStop] = {
-            geo: [stop.latitude, stop.longitude],
-            lines: [stop.linha],
-            closeStops: []
-          };
-        }
-      }
-
-      global.lines = lines;
-      global.stops = stops;
-
-      console.log("Finished processing stops.");
-      callback(err, lines, stops);
-    }
-  });
+  //methods.loadStopsCSV(function (err, output) {
+  //  if (err) callback(err, {}, {});
+  //  else {
+  //    for (var i = 0; i < output.length; i++) {
+  //      var stop = output[i];
+  //      stop.latitude = parseFloat(stop.latitude);
+  //      stop.longitude = parseFloat(stop.longitude);
+  //
+  //      var hashStop = stop.latitude + "" + stop.longitude; // + "(" + stop.sequencia + ")";
+  //      var hashLStop = stop.latitude + "" + stop.longitude + "(" + stop.sequencia + ")";
+  //
+  //      // console.log(stop);
+  //
+  //      //
+  //      // Set up lines
+  //      //
+  //      var lineStop = {
+  //        geo: [stop.latitude, stop.longitude],
+  //        order: stop.sequencia,
+  //        trip: -1
+  //      };
+  //
+  //      if (lines[stop.linha] != undefined) {
+  //        lines[stop.linha].stops[hashLStop] = lineStop;
+  //        // lines[stop.linha].stops.push(lineStop);
+  //      } else {
+  //
+  //        var line = {
+  //          line: stop.linha,
+  //          description: stop.descricao,
+  //          agency: stop.agencia,
+  //          // stops: [lineStop]
+  //          stops: {}
+  //        };
+  //
+  //        line.stops[hashLStop] = lineStop;
+  //        lines[stop.linha] = line;
+  //      }
+  //
+  //      //
+  //      // Set up stops
+  //      //
+  //      var linhaOrdem = stop.linha + "(" + stop.sequencia + ")";
+  //      if (stops[hashStop] !== undefined) {
+  //        // adiciona linha no ponto
+  //        if (stops[hashStop].lines.indexOf(linhaOrdem) == -1) {
+  //          stops[hashStop].lines.push(linhaOrdem);
+  //        }
+  //      } else {
+  //        // Inicia registro do ponto
+  //        stops[hashStop] = {
+  //          geo: [stop.latitude, stop.longitude],
+  //          lines: [linhaOrdem],
+  //          closeStops: []
+  //        };
+  //      }
+  //    }
+  //
+  //    global.lines = lines;
+  //    global.stops = stops;
+  //
+  //    console.log("Finished processing stops.");
+  //    callback(err, lines, stops);
+  //  }
+  //});
 };
 
 /**
